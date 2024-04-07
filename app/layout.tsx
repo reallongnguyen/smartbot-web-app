@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { AntdRegistry } from '@ant-design/nextjs-registry';
 import './globals.css';
 import { App } from 'antd';
-import usePubSub from '@/repositories/pubsub/usePubSub';
+import AppProvider from './AppProvider';
 
 export const metadata: Metadata = {
   title: 'SmartBot',
@@ -14,11 +14,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  usePubSub();
-
   return (
     <html lang='en'>
       <body>
+        <AppProvider />
         <AntdRegistry>
           <App>{children}</App>
         </AntdRegistry>

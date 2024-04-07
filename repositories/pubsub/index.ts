@@ -4,7 +4,7 @@ import { ulid } from 'ulid';
 
 class Pubsub {
   connectionOptions = {
-    protocol: 'ws' as MqttProtocol,
+    protocol: (process.env.NEXT_PUBLIC_MQTT_PROTOCOL || 'ws') as MqttProtocol,
     host: process.env.NEXT_PUBLIC_MQTT_HOST || 'localhost',
     port: parseInt(process.env.NEXT_PUBLIC_MQTT_PORT || '8083'),
     clientId: 'webapp-' + ulid(),
@@ -13,6 +13,8 @@ class Pubsub {
     mqttVersion: '5.0',
     connectTimeout: 10000,
     keepAlive: 60000,
+    username: '01G65Z755AFWAKHE12NY0CQ9FH',
+    password: '',
   };
   client: MqttClient;
   eventEmitter: EventEmitter;
@@ -56,12 +58,31 @@ class Pubsub {
         return;
       }
 
+      if (eventName === 'message') {
+        const [topic, msg, ...res] = args;
+
+        console.log(
+          `pubsub: ${eventName}:`,
+          topic,
+          JSON.parse(msg.toString()),
+          ...res
+        );
+
+        return;
+      }
+
       console.log(`pubsub: ${eventName}:`, args);
     });
   }
 
+  isClose() {
+    return (
+      !this.client || this.client.disconnected || this.client.disconnecting
+    );
+  }
+
   async disconnect() {
-    if (!this.client) {
+    if (!this.client || (!this.client.connected && !this.client.reconnecting)) {
       return;
     }
 
@@ -72,6 +93,10 @@ class Pubsub {
     topic: string,
     cb: (topic: string, msg: Record<string, any>, topicPattern: string) => void
   ) {
+    if (!this.client) {
+      return () => {};
+    }
+
     this.client.subscribe(topic);
     this.client.on('message', (exactTopic, payload) => {
       if (!exactTopic.startsWith(topic.split('#')[0])) {
@@ -89,11 +114,21 @@ class Pubsub {
     };
   }
 
-  subscribeAckCommand(
+  subscribeAck(
+    spaceId: string,
+    userId: string,
+    cb: (topic: string, msg: Record<string, any>, topicPattern: string) => void
+  ) {
+    const topic = `${spaceId}/ack/${userId}`;
+
+    return this.subscribe(topic, cb);
+  }
+
+  subscribeDeviceStatus(
     spaceId: string,
     cb: (topic: string, msg: Record<string, any>, topicPattern: string) => void
   ) {
-    const topic = `${spaceId}/ack_commands/#`;
+    const topic = `${spaceId}/device_status`;
 
     return this.subscribe(topic, cb);
   }
@@ -103,9 +138,18 @@ class Pubsub {
     deviceId: string,
     msg: Record<string, any>
   ) {
-    const topic = `${spaceId}/commands/${deviceId}`;
+    if (!this.client) {
+      return;
+    }
 
-    return this.client.publishAsync(topic, JSON.stringify(msg));
+    const topic = `${spaceId}/command/${deviceId}`;
+
+    return this.client.publishAsync(topic, JSON.stringify(msg)).then((data) => {
+      this.eventEmitter.emit('publish', topic, msg);
+      this.eventEmitter.emit('any', 'publish', topic, msg);
+
+      return data;
+    });
   }
 }
 

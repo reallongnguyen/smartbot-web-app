@@ -5,7 +5,7 @@ let globalClient: Pubsub | undefined = undefined;
 
 function usePubSub() {
   const client = useMemo(() => {
-    if (!globalClient) {
+    if (!globalClient || globalClient.isClose()) {
       globalClient = new Pubsub();
     }
 
