@@ -5,10 +5,12 @@ export interface IoTDevice<T = Record<string, any>> {
   chipId: string;
   name?: string;
   type: string;
-  mode?: string;
-  state: string;
+  state: 'running' | 'stopped';
   connectStatus: string;
-  deviceData?: T;
+  version: string;
+  firmwareVersion: string;
+  switchBot?: T;
+  sensor?: T;
 }
 
 export interface MeasurementValue {
@@ -19,6 +21,11 @@ export interface MeasurementValue {
 export interface SensorData {
   lastMeasurementAt: string;
   measurements: MeasurementValue[];
+}
+
+export interface SwitchData {
+  mode: 'switch' | 'button';
+  state: 'on' | 'off' | 'press';
 }
 
 const lightToText = [

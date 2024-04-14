@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { IoTDevice, SensorData } from './models';
+import { IoTDevice, SensorData, SwitchData } from './models';
 import SwitchCard from './SwitchCard';
 import ClimaTrackCard from './ClimaTrackCard';
 
@@ -12,7 +12,7 @@ function IoTDeviceCard(props: IoTDeviceCardProps) {
   const { device } = props;
 
   if (device.type === 'bot_switch') {
-    return <SwitchCard {...props} />;
+    return <SwitchCard {...props} device={device as IoTDevice<SwitchData>} />;
   }
 
   if (device.type === 'sensor_env') {

@@ -4,98 +4,28 @@ import IoTDeviceCard from '@/components/molecules/IoTDevice/IoTDeviceCard';
 import { IoTDevice } from '@/components/molecules/IoTDevice/models';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
+import { useSupabase } from '@/usecases/supabase/SupabaseContex';
 import { useEffect, useState } from 'react';
 import { ulid } from 'ulid';
+import { camelCase, mapKeys } from 'lodash';
+import { message } from 'antd';
 
 export default function Home() {
   const authSession = useAuthSession();
   const spaceId = authSession?.spaceId || '';
   const userId = authSession?.userId || '';
 
-  const { client } = usePubSub();
-  const [devices, setDevices] = useState<Record<string, IoTDevice>>({
-    '01HTQ9844VMWWP70AD8HGJ48BY': {
-      id: '01HTQ9844VMWWP70AD8HGJ48BY',
-      spaceId: spaceId,
-      macAddress: 'fa:cd:ed:12:13:14',
-      chipId: '00121314',
-      name: 'Switch 1',
-      type: 'bot_switch',
-      mode: 'switch',
-      state: 'off',
-      connectStatus: 'online',
-    },
-    '01HVAJ1N63VW5BAA6SDDWNB88Q': {
-      id: '01HVAJ1N63VW5BAA6SDDWNB88Q',
-      spaceId: spaceId,
-      macAddress: 'fa:cd:ed:12:13:82',
-      chipId: '00121382',
-      name: 'ClimaTrack',
-      type: 'sensor_env',
-      state: 'on',
-      connectStatus: 'online',
-      deviceData: {
-        lastMeasurementAt: new Date().toISOString(),
-        measurements: [
-          {
-            type: 'temperature',
-            value: 24,
-          },
-          {
-            type: 'humidity',
-            value: 50,
-          },
-          {
-            type: 'light',
-            value: 5,
-          },
-        ],
-      },
-    },
-    '01HVBEYVDGP2YWW1NEPXHNX6VP': {
-      id: '01HVBEYVDGP2YWW1NEPXHNX6VP',
-      spaceId: spaceId,
-      macAddress: 'fa:cd:ed:12:13:22',
-      chipId: '00121322',
-      name: 'Outside',
-      type: 'sensor_env',
-      state: 'off',
-      connectStatus: 'online',
-      deviceData: {
-        lastMeasurementAt: '2024-04-14T06:09:00Z',
-        measurements: [
-          {
-            type: 'temperature',
-            value: 40.65,
-          },
-          {
-            type: 'humidity',
-            value: 60,
-          },
-          {
-            type: 'light',
-            value: 9,
-          },
-        ],
-      },
-    },
-    '01HTQHX3KXA94E0C4G9MH9D060': {
-      id: '01HTQHX3KXA94E0C4G9MH9D060',
-      spaceId: spaceId,
-      macAddress: 'fa:cd:ed:12:13:15',
-      chipId: '00121315',
-      name: 'Switch 2',
-      type: 'bot_switch',
-      mode: 'button',
-      state: 'off',
-      connectStatus: 'online',
-    },
-  });
+  const pubsub = usePubSub();
+  const supabase = useSupabase();
+
+  const [devices, setDevices] = useState<Record<string, IoTDevice>>({});
+
+  const [messageApi, messageContext] = message.useMessage();
 
   const handleCardAction = (device: IoTDevice) => () => {
     switch (device.type) {
       case 'bot_switch':
-        if (device.mode === 'button') {
+        if (device.switchBot?.mode === 'button') {
           pressButton(device.id);
         } else {
           toggleSwitch(device.id);
@@ -112,10 +42,10 @@ export default function Home() {
       return;
     }
 
-    client?.publishCommand(spaceId, id, {
+    pubsub?.publishCommand(spaceId, id, {
       id: ulid(),
       requesterId: userId,
-      command: devices[id].state === 'on' ? 'off' : 'on',
+      command: devices[id].switchBot?.state === 'on' ? 'off' : 'on',
       type: 'functional',
     });
   };
@@ -125,7 +55,7 @@ export default function Home() {
       return;
     }
 
-    client?.publishCommand(spaceId, id, {
+    pubsub?.publishCommand(spaceId, id, {
       id: ulid(),
       requesterId: userId,
       command: 'on',
@@ -151,11 +81,54 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!client || !authSession) {
+    if (!supabase) {
       return;
     }
 
-    const unsubAckCmd = client.subscribeAck(
+    const getIoTDevices = async () => {
+      let { data: iotDevices, error } = await supabase
+        .from('iot_devices')
+        .select('*, switch_bot:switch_bots!left(*), sensor:sensors!left(*)');
+
+      if (error) {
+        console.error('home: getIoTDevices:', error);
+        messageApi.open({
+          type: 'error',
+          content: error.message,
+        });
+        return;
+      }
+
+      console.log('getIoTDevices: iotDevices', iotDevices);
+      const store: Record<string, IoTDevice> = {};
+      if (iotDevices) {
+        iotDevices.forEach((device) => {
+          const camelDevice = mapKeys(device, (v, k) => camelCase(k));
+
+          ['switchBot', 'sensor'].forEach((extraData) => {
+            if (camelDevice[extraData]) {
+              camelDevice[extraData] = mapKeys(camelDevice[extraData], (v, k) =>
+                camelCase(k)
+              );
+            }
+          });
+
+          store[camelDevice.id] = camelDevice as IoTDevice;
+        });
+      }
+
+      setDevices(store);
+    };
+
+    getIoTDevices();
+  }, [messageApi, supabase]);
+
+  useEffect(() => {
+    if (!pubsub || !authSession) {
+      return;
+    }
+
+    const unsubAckCmd = pubsub.subscribeAck(
       authSession.spaceId,
       authSession.userId,
       (topic, msg) => {
@@ -163,7 +136,7 @@ export default function Home() {
       }
     );
 
-    const unsubDvUpdate = client.subscribeDeviceUpdate(
+    const unsubDvUpdate = pubsub.subscribeDeviceUpdate(
       authSession.spaceId,
       (topic, msg) => {
         setDevices((dvs) => {
@@ -178,13 +151,22 @@ export default function Home() {
             state: msg.state,
           };
 
+          if (newDevices[msg.iotDeviceId].type === 'switch') {
+            newDevices[msg.iotDeviceId].switchBot = {
+              ...newDevices[msg.iotDeviceId].switchBot,
+              state: msg.state,
+            };
+          }
+
           // make press animation if state of button change
           if (
             newDevices[msg.iotDeviceId].type === 'switch' &&
-            newDevices[msg.iotDeviceId].mode === 'button' &&
-            dvs[msg.iotDeviceId].state !== msg.state
+            newDevices[msg.iotDeviceId].switchBot?.mode === 'button' &&
+            dvs[msg.iotDeviceId].switchBot?.state !== msg.state
           ) {
-            newDevices[msg.iotDeviceId].state = 'press';
+            if (typeof newDevices[msg.iotDeviceId].switchBot !== 'undefined') {
+              (newDevices[msg.iotDeviceId].switchBot as any).state = 'press';
+            }
 
             setTimeout(
               () => changeDevice(msg.iotDeviceId, { state: msg.state }),
@@ -197,7 +179,7 @@ export default function Home() {
       }
     );
 
-    const unsubMeasurement = client.subscribeMeasurement(
+    const unsubMeasurement = pubsub.subscribeMeasurement(
       authSession.spaceId,
       (topic, msg) => {
         const id = msg.iotDeviceId;
@@ -213,8 +195,8 @@ export default function Home() {
             ...dvs,
             [id]: {
               ...dvs[id],
-              deviceData: {
-                ...dvs[id].deviceData,
+              sensor: {
+                ...dvs[id].sensor,
                 lastMeasurementAt: msg.timestamp,
                 measurements: msg.measurements,
               },
@@ -229,25 +211,28 @@ export default function Home() {
       unsubDvUpdate();
       unsubMeasurement();
     };
-  }, [authSession, client]);
+  }, [authSession, pubsub]);
 
   return (
-    <main className='relative grid grid-rows-[auto_1fr_auto] h-[100dvh]'>
-      <header className='h-12 flex items-center px-3'>
-        <h1 className='text-lg font-semibold'>Home</h1>
-      </header>
-      <div className='px-3'>
-        <div className='grid grid-cols-2 gap-2'>
-          {Object.values(devices).map((device) => (
-            <IoTDeviceCard
-              device={device}
-              action={handleCardAction(device)}
-              key={device.id}
-            />
-          ))}
+    <>
+      {messageContext}
+      <main className='relative grid grid-rows-[auto_1fr_auto] h-[100dvh]'>
+        <header className='h-12 flex items-center px-3'>
+          <h1 className='text-lg font-semibold'>Home</h1>
+        </header>
+        <div className='px-3'>
+          <div className='grid grid-cols-2 gap-2'>
+            {Object.values(devices).map((device) => (
+              <IoTDeviceCard
+                device={device}
+                action={handleCardAction(device)}
+                key={device.id}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-      <div className='absolute bottom-0 h-20 w-full bg-white'></div>
-    </main>
+        <div className='absolute bottom-0 h-16 w-full bg-white'></div>
+      </main>
+    </>
   );
 }

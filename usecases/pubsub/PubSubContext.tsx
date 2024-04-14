@@ -37,7 +37,7 @@ export const PubSubProvider = function ({ children }: PropsWithChildren) {
 function usePubSub() {
   const ps = useContext(PubSubContext);
 
-  return { client: ps };
+  return ps;
 }
 
 export default usePubSub;

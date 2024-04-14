@@ -5,6 +5,7 @@ import GeneralDeviceIcon from '@/components/atoms/GeneralDeviceIcon';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 dayjs.extend(relativeTime);
 
@@ -16,18 +17,17 @@ export interface ClimaTrackCardProps {
 function ClimaTrackCard(props: ClimaTrackCardProps) {
   const { device } = props;
 
+  const router = useRouter();
+
   const [reltTime, setReltTime] = useState(
-    dayjs(device.deviceData?.lastMeasurementAt).fromNow()
+    dayjs(device.sensor?.lastMeasurementAt).fromNow()
   );
 
-  const state =
-    device.mode === 'button' && device.state === 'on'
-      ? 'release'
-      : device.state;
+  const shortState = device.state === 'running' ? 'run' : 'stop';
 
   useEffect(() => {
     const itvId = setInterval(() => {
-      setReltTime(dayjs(device.deviceData?.lastMeasurementAt).fromNow());
+      setReltTime(dayjs(device.sensor?.lastMeasurementAt).fromNow());
     }, 1000);
 
     return () => {
@@ -37,14 +37,18 @@ function ClimaTrackCard(props: ClimaTrackCardProps) {
 
   return (
     <Card className='h-28 relative' size='small'>
+      <div
+        className='absolute left-0 top-0 w-full h-full'
+        onClick={() => router.push(`/devices/${device.id}`)}
+      />
       <div className='flex justify-between'>
         <GeneralDeviceIcon
           icon={<ThermometerSunIcon className='text-gray-50' strokeWidth={1} />}
-          state={device.state as 'on' | 'off'}
+          state={device.state as 'running' | 'stopped'}
         />
         <div className='w-6' />
         <div className='grid gap-0.5 grid-cols-3 w-full'>
-          {device.deviceData?.measurements.map((item) => (
+          {device.sensor?.measurements.map((item) => (
             <div
               className={`
                 text-sm rounded-sm w-full overflow-hidden
@@ -79,13 +83,13 @@ function ClimaTrackCard(props: ClimaTrackCardProps) {
           ))}
         </div>
       </div>
-      <div className='absolute left-0 bottom-0 w-full h-1/2 pt-1 px-3'>
+      <div className='absolute left-0 bottom-0 w-full h-1/2 pt-1 px-3 pointer-events-none'>
         <div className='font-semibold truncate text-ellipsis'>
           {device.name}
         </div>
         <div className='flex space-x-1 items-center'>
-          <p className='text-xs'>{state.toUpperCase()}</p>
-          {device.deviceData?.lastMeasurementAt && (
+          <p className='text-xs'>{shortState.toUpperCase()}</p>
+          {device.sensor?.lastMeasurementAt && (
             <>
               <Divider type='vertical' className='mx-1' />
               <div className='text-xs'>{reltTime}</div>
