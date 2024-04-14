@@ -1,18 +1,15 @@
 'use client';
 
-import usePubSub from '@/repositories/pubsub/usePubSub';
-import { useEffect } from 'react';
+import { AuthProvider } from '@/usecases/auth/AuthContext';
+import { PubSubProvider } from '@/usecases/pubsub/PubSubContext';
+import { PropsWithChildren } from 'react';
 
-function AppProvider() {
-  const client = usePubSub();
-
-  useEffect(() => {
-    return () => {
-      client.disconnect();
-    };
-  }, [client]);
-
-  return <></>;
+function AppProvider({ children }: PropsWithChildren) {
+  return (
+    <AuthProvider>
+      <PubSubProvider>{children}</PubSubProvider>
+    </AuthProvider>
+  );
 }
 
 export default AppProvider;

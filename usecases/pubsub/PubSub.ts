@@ -2,26 +2,29 @@ import EventEmitter from 'events';
 import mqtt, { MqttClient, MqttProtocol } from 'mqtt';
 import { ulid } from 'ulid';
 
-class Pubsub {
-  connectionOptions = {
+export interface PubSubAuthData {
+  username: string;
+  password: string;
+}
+
+class PubSub {
+  connectionOptions: mqtt.IClientOptions = {
     protocol: (process.env.NEXT_PUBLIC_MQTT_PROTOCOL || 'ws') as MqttProtocol,
     host: process.env.NEXT_PUBLIC_MQTT_HOST || 'localhost',
     port: parseInt(process.env.NEXT_PUBLIC_MQTT_PORT || '8083'),
     clientId: 'webapp-' + ulid(),
-    autoReconnect: true,
     reconnectPeriod: 4000,
-    mqttVersion: '5.0',
     connectTimeout: 10000,
-    keepAlive: 60000,
-    username: '01G65Z755AFWAKHE12NY0CQ9FH',
-    password: '',
   };
   client: MqttClient;
   eventEmitter: EventEmitter;
   isDebug = Boolean(process.env.NEXT_PUBLIC_DEBUG);
 
-  constructor() {
+  constructor(authData: PubSubAuthData) {
     const { protocol, host, port } = this.connectionOptions;
+
+    this.connectionOptions.username = authData.username;
+    this.connectionOptions.password = authData.password;
 
     const url = `${protocol}://${host}:${port}/mqtt`;
     this.client = mqtt.connect(url, this.connectionOptions);
@@ -75,14 +78,12 @@ class Pubsub {
     });
   }
 
-  isClose() {
-    return (
-      !this.client || this.client.disconnected || this.client.disconnecting
-    );
+  isConnect() {
+    return this.client && this.client.connected;
   }
 
   async disconnect() {
-    if (!this.client || (!this.client.connected && !this.client.reconnecting)) {
+    if (!this.client) {
       return;
     }
 
@@ -98,7 +99,7 @@ class Pubsub {
     }
 
     this.client.subscribe(topic);
-    this.client.on('message', (exactTopic, payload) => {
+    const cbWrapper = (exactTopic: string, payload: any) => {
       if (!exactTopic.startsWith(topic.split('#')[0])) {
         return;
       }
@@ -107,10 +108,22 @@ class Pubsub {
       const msg = JSON.parse(payloadStr);
 
       cb(exactTopic, msg, topic);
-    });
+    };
+
+    this.client.on('message', cbWrapper);
 
     return () => {
-      this.client.unsubscribeAsync(topic);
+      if (!this.client) {
+        return;
+      }
+
+      this.client.removeListener('message', cbWrapper);
+
+      try {
+        this.client.unsubscribeAsync(topic);
+      } catch (err) {
+        this.eventEmitter.emit('any', 'error', `unsubscribe ${topic}`, err);
+      }
     };
   }
 
@@ -124,11 +137,20 @@ class Pubsub {
     return this.subscribe(topic, cb);
   }
 
-  subscribeDeviceStatus(
+  subscribeDeviceUpdate(
     spaceId: string,
     cb: (topic: string, msg: Record<string, any>, topicPattern: string) => void
   ) {
-    const topic = `${spaceId}/device_status`;
+    const topic = `${spaceId}/iot_device/update/#`;
+
+    return this.subscribe(topic, cb);
+  }
+
+  subscribeMeasurement(
+    spaceId: string,
+    cb: (topic: string, msg: Record<string, any>, topicPattern: string) => void
+  ) {
+    const topic = `${spaceId}/measurement/#`;
 
     return this.subscribe(topic, cb);
   }
@@ -153,4 +175,4 @@ class Pubsub {
   }
 }
 
-export default Pubsub;
+export default PubSub;

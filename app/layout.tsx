@@ -17,9 +17,10 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body>
-        <AppProvider />
         <AntdRegistry>
-          <App>{children}</App>
+          <App>
+            <AppProvider>{children}</AppProvider>
+          </App>
         </AntdRegistry>
       </body>
     </html>

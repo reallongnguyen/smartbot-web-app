@@ -1,27 +1,16 @@
 import { Button, Card } from 'antd';
 import { Power } from 'lucide-react';
-import SwitchIcon from '../atoms/SwitchIcon';
+import SwitchIcon from '../../atoms/SwitchIcon';
 import { memo } from 'react';
-import ButtonIcon from '../atoms/ButtonIcon';
+import ButtonIcon from '../../atoms/ButtonIcon';
+import { IoTDevice } from './models';
 
-export interface IoTDevice {
-  id: string;
-  spaceId: string;
-  macAddress: string;
-  chipId: string;
-  name?: string;
-  type: string;
-  mode?: string;
-  state: string;
-  connectStatus: string;
-}
-
-export interface IoTDeviceCardProps {
+export interface SwitchCardProps {
   device: IoTDevice;
   action?: () => void;
 }
 
-function IoTDeviceCard(props: IoTDeviceCardProps) {
+function SwitchCard(props: SwitchCardProps) {
   const { device, action } = props;
 
   const DeviceIcon =
@@ -66,4 +55,4 @@ function IoTDeviceCard(props: IoTDeviceCardProps) {
   );
 }
 
-export default memo(IoTDeviceCard);
+export default memo(SwitchCard);
