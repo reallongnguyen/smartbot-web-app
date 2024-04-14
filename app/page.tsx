@@ -76,6 +76,13 @@ export default function Home() {
         ...data,
       };
 
+      if (newDevices[id].type === 'bot_switch') {
+        newDevices[id].switchBot = {
+          ...newDevices[id].switchBot,
+          ...data,
+        };
+      }
+
       return newDevices;
     });
   };
@@ -151,7 +158,7 @@ export default function Home() {
             state: msg.state,
           };
 
-          if (newDevices[msg.iotDeviceId].type === 'switch') {
+          if (newDevices[msg.iotDeviceId].type === 'bot_switch') {
             newDevices[msg.iotDeviceId].switchBot = {
               ...newDevices[msg.iotDeviceId].switchBot,
               state: msg.state,
@@ -160,13 +167,13 @@ export default function Home() {
 
           // make press animation if state of button change
           if (
-            newDevices[msg.iotDeviceId].type === 'switch' &&
-            newDevices[msg.iotDeviceId].switchBot?.mode === 'button' &&
-            dvs[msg.iotDeviceId].switchBot?.state !== msg.state
+            newDevices[msg.iotDeviceId].type === 'bot_switch' &&
+            newDevices[msg.iotDeviceId].switchBot?.mode === 'button'
           ) {
-            if (typeof newDevices[msg.iotDeviceId].switchBot !== 'undefined') {
-              (newDevices[msg.iotDeviceId].switchBot as any).state = 'press';
-            }
+            newDevices[msg.iotDeviceId].switchBot = {
+              ...newDevices[msg.iotDeviceId].switchBot,
+              state: 'press',
+            };
 
             setTimeout(
               () => changeDevice(msg.iotDeviceId, { state: msg.state }),

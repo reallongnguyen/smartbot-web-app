@@ -4,6 +4,8 @@ import ButtonIcon from '@/components/atoms/ButtonIcon';
 import GeneralDeviceIcon from '@/components/atoms/GeneralDeviceIcon';
 import SwitchIcon from '@/components/atoms/SwitchIcon';
 import { IoTDevice } from '@/components/molecules/IoTDevice/models';
+import { useAuthSession } from '@/usecases/auth/AuthContext';
+import usePubSub from '@/usecases/pubsub/PubSubContext';
 import { useSupabase } from '@/usecases/supabase/SupabaseContex';
 import { Button, Divider, Skeleton, message } from 'antd';
 import { camelCase, mapKeys } from 'lodash';
@@ -23,11 +25,35 @@ import { useEffect, useState } from 'react';
 
 function DevicePage({ params }: { params: { id: string } }) {
   const { id } = params;
+  const authSession = useAuthSession();
 
   const [device, setDevice] = useState<IoTDevice | null>(null);
 
   const router = useRouter();
+  const pubsub = usePubSub();
   const supabase = useSupabase();
+
+  const changeDevice = (id: string, data: Record<string, any>) => {
+    setDevice((d) => {
+      if (!d || d.id !== id) {
+        return d;
+      }
+
+      const newDevice = {
+        ...d,
+        ...data,
+      };
+
+      if (newDevice.type === 'bot_switch') {
+        newDevice.switchBot = {
+          ...newDevice.switchBot,
+          ...data,
+        };
+      }
+
+      return newDevice;
+    });
+  };
 
   useEffect(() => {
     if (!supabase) {
@@ -74,6 +100,56 @@ function DevicePage({ params }: { params: { id: string } }) {
 
     getIoTDevice();
   }, [id, supabase]);
+
+  useEffect(() => {
+    if (!pubsub || !authSession) {
+      return;
+    }
+
+    const unsubDvUpdate = pubsub.subscribeDeviceUpdate(
+      authSession.spaceId,
+      (topic, msg) => {
+        setDevice((d) => {
+          if (!d || d.id !== msg.iotDeviceId) {
+            return d;
+          }
+
+          const newDevice = {
+            ...d,
+            state: msg.state,
+          };
+
+          if (newDevice.type === 'bot_switch') {
+            newDevice.switchBot = {
+              ...newDevice.switchBot,
+              state: msg.state,
+            };
+          }
+
+          // make press animation if state of button change
+          if (
+            newDevice.type === 'bot_switch' &&
+            newDevice.switchBot?.mode === 'button'
+          ) {
+            if (typeof newDevice.switchBot !== 'undefined') {
+              (newDevice.switchBot as any).state = 'press';
+            }
+
+            setTimeout(
+              () => changeDevice(msg.iotDeviceId, { state: msg.state }),
+              500
+            );
+          }
+
+          return newDevice;
+        });
+      }
+    );
+
+    return () => {
+      unsubDvUpdate;
+    };
+  }, [authSession, pubsub]);
 
   return (
     <main className='relative h-[100dvh]'>
