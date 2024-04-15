@@ -1,32 +1,29 @@
 'use client';
 
-import IoTDeviceCard from '@/components/molecules/IoTDevice/IoTDeviceCard';
-import { IoTDevice } from '@/components/molecules/IoTDevice/models';
+import IoTDeviceCard from '@/components/molecules/deviceCards/IoTDeviceCard';
+import { IoTDevice } from '@/components/molecules/deviceCards/models';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
 import { useSupabase } from '@/usecases/supabase/SupabaseContex';
 import { useEffect, useState } from 'react';
-import { ulid } from 'ulid';
 import { camelCase, mapKeys } from 'lodash';
 import { message } from 'antd';
+import useCommand from '@/usecases/command/useCommand';
 
 export default function Home() {
   const authSession = useAuthSession();
-  const spaceId = authSession?.spaceId || '';
-  const userId = authSession?.userId || '';
+  const command = useCommand();
 
   const pubsub = usePubSub();
   const supabase = useSupabase();
 
   const [devices, setDevices] = useState<Record<string, IoTDevice>>({});
 
-  const [messageApi, messageContext] = message.useMessage();
-
   const handleCardAction = (device: IoTDevice) => () => {
     switch (device.type) {
       case 'bot_switch':
         if (device.switchBot?.mode === 'button') {
-          pressButton(device.id);
+          command.turnOnSwitchBot(device.id);
         } else {
           toggleSwitch(device.id);
         }
@@ -42,25 +39,11 @@ export default function Home() {
       return;
     }
 
-    pubsub?.publishCommand(spaceId, id, {
-      id: ulid(),
-      requesterId: userId,
-      command: devices[id].switchBot?.state === 'on' ? 'off' : 'on',
-      type: 'functional',
-    });
-  };
-
-  const pressButton = (id: string) => {
-    if (!devices[id]) {
-      return;
+    if (devices[id].switchBot?.state === 'on') {
+      command.turnOffSwitchBot(id);
+    } else {
+      command.turnOnSwitchBot(id);
     }
-
-    pubsub?.publishCommand(spaceId, id, {
-      id: ulid(),
-      requesterId: userId,
-      command: 'on',
-      type: 'functional',
-    });
   };
 
   const changeDevice = (id: string, data: Record<string, any>) => {
@@ -95,12 +78,12 @@ export default function Home() {
     const getIoTDevices = async () => {
       let { data: iotDevices, error } = await supabase
         .from('iot_devices')
-        .select('*, switch_bot:switch_bots!left(*), sensor:sensors!left(*)');
+        .select('*, switch_bot:switch_bots!left(*), sensor:sensors!left(*)')
+        .order('name', { nullsFirst: true });
 
       if (error) {
         console.error('home: getIoTDevices:', error);
-        messageApi.open({
-          type: 'error',
+        message.error({
           content: error.message,
         });
         return;
@@ -128,20 +111,12 @@ export default function Home() {
     };
 
     getIoTDevices();
-  }, [messageApi, supabase]);
+  }, [supabase]);
 
   useEffect(() => {
     if (!pubsub || !authSession) {
       return;
     }
-
-    const unsubAckCmd = pubsub.subscribeAck(
-      authSession.spaceId,
-      authSession.userId,
-      (topic, msg) => {
-        changeDevice(msg.iotDeviceId, { state: msg.newState });
-      }
-    );
 
     const unsubDvUpdate = pubsub.subscribeDeviceUpdate(
       authSession.spaceId,
@@ -214,7 +189,6 @@ export default function Home() {
     );
 
     return () => {
-      unsubAckCmd();
       unsubDvUpdate();
       unsubMeasurement();
     };
@@ -222,7 +196,6 @@ export default function Home() {
 
   return (
     <>
-      {messageContext}
       <main className='relative grid grid-rows-[auto_1fr_auto] h-[100dvh]'>
         <header className='h-12 flex items-center px-3'>
           <h1 className='text-lg font-semibold'>Home</h1>

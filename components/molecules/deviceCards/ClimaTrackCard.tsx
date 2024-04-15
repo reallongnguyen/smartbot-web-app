@@ -85,7 +85,7 @@ function ClimaTrackCard(props: ClimaTrackCardProps) {
       </div>
       <div className='absolute left-0 bottom-0 w-full h-1/2 pt-1 px-3 pointer-events-none'>
         <div className='font-semibold truncate text-ellipsis'>
-          {device.name}
+          {device.name || 'no name'}
         </div>
         <div className='flex space-x-1 items-center'>
           <p className='text-xs'>{shortState.toUpperCase()}</p>

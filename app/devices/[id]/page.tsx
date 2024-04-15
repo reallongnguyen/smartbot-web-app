@@ -1,37 +1,42 @@
 'use client';
 
-import ButtonIcon from '@/components/atoms/ButtonIcon';
-import GeneralDeviceIcon from '@/components/atoms/GeneralDeviceIcon';
-import SwitchIcon from '@/components/atoms/SwitchIcon';
-import { IoTDevice } from '@/components/molecules/IoTDevice/models';
+import {
+  IoTDevice,
+  SensorData,
+  SwitchBotData,
+} from '@/components/molecules/deviceCards/models';
+import EnvSensorDetail from '@/components/organisms/deviceDetails/EnvSensor';
+import SwitchBotDetail from '@/components/organisms/deviceDetails/SwitchBotDetail';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
+import useCommand from '@/usecases/command/useCommand';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
 import { useSupabase } from '@/usecases/supabase/SupabaseContex';
-import { Button, Divider, Skeleton, message } from 'antd';
+import { Button, Divider, Drawer, Input, message } from 'antd';
 import { camelCase, mapKeys } from 'lodash';
 import {
   ArrowLeft,
   CalendarClock,
   ChevronRight,
   Cpu,
-  Edit,
   Info,
   ReceiptText,
   Settings,
-  ThermometerSunIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 function DevicePage({ params }: { params: { id: string } }) {
   const { id } = params;
   const authSession = useAuthSession();
 
   const [device, setDevice] = useState<IoTDevice | null>(null);
+  const [deviceName, setDeviceName] = useState('');
+  const [drawer, setDrawer] = useState('');
 
   const router = useRouter();
   const pubsub = usePubSub();
   const supabase = useSupabase();
+  const command = useCommand();
 
   const changeDevice = (id: string, data: Record<string, any>) => {
     setDevice((d) => {
@@ -55,18 +60,48 @@ function DevicePage({ params }: { params: { id: string } }) {
     });
   };
 
+  const openAdvancedSetting = () => {
+    setDrawer('advancedSetting');
+  };
+
+  const closeDrawer = () => {
+    setDrawer('');
+  };
+
+  const updateSwitchBot = useCallback(async () => {
+    if (!supabase || !device) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('iot_devices')
+      .update({ name: deviceName })
+      .eq('id', device.id);
+
+    if (error) {
+      message.error({ content: error.message });
+      return;
+    }
+
+    message.success({ content: 'saved' });
+    setDevice((d) => (d ? { ...d, name: deviceName } : d));
+    closeDrawer();
+  }, [device, deviceName, supabase]);
+
+  useEffect(() => {
+    setDeviceName(device?.name || '');
+  }, [device?.name]);
+
   useEffect(() => {
     if (!supabase) {
       return;
     }
 
-    const getIoTDevice = async () => {
+    const getIoTDevice = async (id: string) => {
       let { data: iotDevice, error } = await supabase
         .from('iot_devices')
         .select('*, switch_bot:switch_bots!left(*), sensor:sensors!left(*)')
         .eq('id', id);
-
-      console.log(id);
 
       if (error) {
         console.error('home: getIoTDevice:', error);
@@ -98,7 +133,7 @@ function DevicePage({ params }: { params: { id: string } }) {
       setDevice(camelDevice);
     };
 
-    getIoTDevice();
+    getIoTDevice(id);
   }, [id, supabase]);
 
   useEffect(() => {
@@ -152,133 +187,137 @@ function DevicePage({ params }: { params: { id: string } }) {
   }, [authSession, pubsub]);
 
   return (
-    <main className='relative h-[100dvh]'>
-      <header className='absolute top-0 h-12 px-3 w-full bg-white'>
-        <div className='absolute top-1/2 -translate-y-1/2'>
-          <Button
-            onClick={() => router.back()}
-            className='-ml-0.5'
-            type='text'
-            shape='circle'
-          >
-            <ArrowLeft size={28} />
-          </Button>
-        </div>
-        <div className='flex items-center justify-center h-full'>
-          <h1 className='text-lg font-semibold'>Bot Setting</h1>
-        </div>
-      </header>
-      <div className='pt-12'>
-        <div className='px-3 mt-3 bg-white'>
-          {!device && <div className='h-64 grid place-items-center' />}
-          {device && (
-            <div className='h-64 grid grid-rows-[1fr_auto]'>
-              <div className='grid place-items-center'>
-                <div className='flex flex-col items-center'>
-                  <div className='flex items-center justify-center w-28 h-20 rounded ring ring-teal-100'>
-                    {device.switchBot && device.switchBot.mode === 'switch' && (
-                      <SwitchIcon state={device.switchBot.state || 'off'} />
-                    )}
-                    {device.switchBot && device.switchBot.mode === 'button' && (
-                      <ButtonIcon state={device.switchBot.state || 'off'} />
-                    )}
-                    {device.type === 'sensor_env' && (
-                      <GeneralDeviceIcon
-                        icon={
-                          <ThermometerSunIcon
-                            className='text-gray-50'
-                            strokeWidth={1}
-                          />
-                        }
-                        state={device.state || 'stopped'}
-                      />
-                    )}
-                  </div>
-                  <div className='flex items-center mt-2'>
-                    <div className='mr-0.5'>{device?.name}</div>
-                    <Button
-                      type='text'
-                      shape='circle'
-                      icon={<Edit className='text-gray-400' size={18} />}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className='py-1 flex space-x-2'>
-                {device.switchBot?.mode === 'switch' && (
-                  <>
-                    <Button type='text' className='w-full'>
-                      Switch On
-                    </Button>
-                    <Button type='text' className='w-full'>
-                      Switch Off
-                    </Button>
-                  </>
-                )}
-                {device.switchBot?.mode === 'button' && (
-                  <Button type='text' className='w-full'>
-                    Press
-                  </Button>
-                )}
-              </div>
+    <>
+      <Drawer
+        placement='bottom'
+        open={drawer === 'advancedSetting'}
+        onClose={closeDrawer}
+        height='94dvh'
+        title={
+          <div className='flex items-center justify-between h-10'>
+            <div className=''>Advanced settings</div>
+            <div className=''>
+              <Button type='primary' onClick={updateSwitchBot}>
+                Apply
+              </Button>
             </div>
-          )}
-          <Divider orientationMargin={0} className='!m-0' />
-          <div className='h-14 flex justify-between items-center'>
-            <div className='flex items-center'>
-              <Settings className='text-gray-400' />
-              <div className='ml-3'>Advanced Settings</div>
-            </div>
-            <Button className='-mr-0.5' type='text' shape='circle'>
-              <ChevronRight className='text-gray-400' />
+          </div>
+        }
+        styles={{
+          body: { padding: 0 },
+          header: {
+            padding: '0 0.75rem 0 0.75rem',
+          },
+        }}
+      >
+        <div className='px-3 pt-3 pb-8'>
+          <div className='mb-1 font-semibold'>Device name</div>
+          <Input
+            size='large'
+            allowClear
+            autoFocus
+            value={deviceName}
+            placeholder='Device name'
+            onChange={(e) => setDeviceName(e.target.value)}
+          />
+        </div>
+      </Drawer>
+      <main className='relative h-[100dvh]'>
+        <header className='absolute top-0 h-12 px-3 w-full bg-white'>
+          <div className='absolute top-1/2 -translate-y-1/2'>
+            <Button
+              onClick={() => router.back()}
+              className='-ml-0.5'
+              type='text'
+              shape='circle'
+            >
+              <ArrowLeft size={28} />
             </Button>
           </div>
-        </div>
-        <div className='mt-3 bg-white'>
-          <div className='mx-3'>
-            <div className='h-14 flex justify-between items-center'>
-              <div className='flex items-center'>
-                <CalendarClock className='text-gray-400' />
-                <div className='ml-3'>Schedule</div>
-              </div>
-              <Button className='-mr-0.5' type='text' shape='circle'>
-                <ChevronRight className='text-gray-400' />
-              </Button>
+          <div className='flex items-center justify-center h-full'>
+            <h1 className='text-lg'>Bot Setting</h1>
+          </div>
+        </header>
+        <div className='pt-12'>
+          <div className='px-3 mt-3 bg-white'>
+            <div className='h-64 grid grid-rows-[1fr_auto]'>
+              {device?.type === 'bot_switch' && (
+                <SwitchBotDetail
+                  device={device as IoTDevice<SwitchBotData>}
+                  turnOn={() => command.turnOnSwitchBot(id)}
+                  turnOff={() => command.turnOffSwitchBot(id)}
+                  changeName={openAdvancedSetting}
+                />
+              )}
+
+              {device?.type === 'sensor_env' && (
+                <EnvSensorDetail
+                  device={device as IoTDevice<SensorData>}
+                  changeName={openAdvancedSetting}
+                />
+              )}
             </div>
+
             <Divider orientationMargin={0} className='!m-0' />
-            <div className='h-14 flex justify-between items-center'>
+            <div
+              className='h-14 flex justify-between items-center'
+              onClick={openAdvancedSetting}
+            >
               <div className='flex items-center'>
-                <ReceiptText className='text-gray-400' />
-                <div className='ml-3'>Log</div>
+                <Settings className='text-gray-600' />
+                <div className='ml-3'>Advanced Settings</div>
               </div>
               <Button className='-mr-0.5' type='text' shape='circle'>
-                <ChevronRight className='text-gray-400' />
-              </Button>
-            </div>
-            <Divider orientationMargin={0} className='!m-0' />
-            <div className='h-14 flex justify-between items-center'>
-              <div className='flex items-center'>
-                <Cpu className='text-gray-400' />
-                <div className='ml-3'>Firmware</div>
-              </div>
-              <Button className='-mr-0.5' type='text' shape='circle'>
-                <ChevronRight className='text-gray-400' />
-              </Button>
-            </div>
-            <Divider orientationMargin={0} className='!m-0' />
-            <div className='h-14 flex justify-between items-center'>
-              <div className='flex items-center'>
-                <Info className='text-gray-400' />
-                <div className='ml-3'>Device info</div>
-              </div>
-              <Button className='-mr-0.5' type='text' shape='circle'>
-                <ChevronRight className='text-gray-400' />
+                <ChevronRight className='text-gray-600' />
               </Button>
             </div>
           </div>
+          <div className='mt-3 bg-white'>
+            <div className='mx-3'>
+              <div className='h-14 flex justify-between items-center'>
+                <div className='flex items-center'>
+                  <CalendarClock className='text-gray-600' />
+                  <div className='ml-3'>Schedule</div>
+                </div>
+                <Button className='-mr-0.5' type='text' shape='circle'>
+                  <ChevronRight className='text-gray-600' />
+                </Button>
+              </div>
+              <Divider orientationMargin={0} className='!m-0' />
+              <div className='h-14 flex justify-between items-center'>
+                <div className='flex items-center'>
+                  <ReceiptText className='text-gray-600' />
+                  <div className='ml-3'>Log</div>
+                </div>
+                <Button className='-mr-0.5' type='text' shape='circle'>
+                  <ChevronRight className='text-gray-600' />
+                </Button>
+              </div>
+              <Divider orientationMargin={0} className='!m-0' />
+              <div className='h-14 flex justify-between items-center'>
+                <div className='flex items-center'>
+                  <Cpu className='text-gray-600' />
+                  <div className='ml-3'>Firmware</div>
+                </div>
+                <Button className='-mr-0.5' type='text' shape='circle'>
+                  <ChevronRight className='text-gray-600' />
+                </Button>
+              </div>
+              <Divider orientationMargin={0} className='!m-0' />
+              <div className='h-14 flex justify-between items-center'>
+                <div className='flex items-center'>
+                  <Info className='text-gray-600' />
+                  <div className='ml-3'>Device info</div>
+                </div>
+                <Button className='-mr-0.5' type='text' shape='circle'>
+                  <ChevronRight className='text-gray-600' />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
 

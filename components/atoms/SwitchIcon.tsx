@@ -1,5 +1,5 @@
 export interface SwitchIconProps {
-  state: 'on' | 'off';
+  state: 'on' | 'off' | 'press';
 }
 
 function SwitchIcon(props: SwitchIconProps) {

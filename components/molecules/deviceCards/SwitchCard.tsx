@@ -3,11 +3,11 @@ import { Power } from 'lucide-react';
 import SwitchIcon from '../../atoms/SwitchIcon';
 import { memo } from 'react';
 import ButtonIcon from '../../atoms/ButtonIcon';
-import { IoTDevice, SwitchData } from './models';
+import { IoTDevice, SwitchBotData } from './models';
 import { useRouter } from 'next/navigation';
 
 export interface SwitchCardProps {
-  device: IoTDevice<SwitchData>;
+  device: IoTDevice<SwitchBotData>;
   action?: () => void;
 }
 
@@ -55,7 +55,7 @@ function SwitchCard(props: SwitchCardProps) {
       </div>
       <div className='absolute left-0 bottom-0 w-full h-1/2 pt-1 px-3 pointer-events-none'>
         <div className='font-semibold truncate text-ellipsis'>
-          {device.name}
+          {device.name || 'no name'}
         </div>
         <p className='text-xs'>{state.toUpperCase()}</p>
       </div>

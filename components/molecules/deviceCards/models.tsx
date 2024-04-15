@@ -9,8 +9,11 @@ export interface IoTDevice<T = Record<string, any>> {
   connectStatus: string;
   version: string;
   firmwareVersion: string;
-  switchBot?: T;
   sensor?: T;
+  switchBot?: T;
+  irRemoteBot?: T;
+  curtainBot?: T;
+  fishFeederBot?: T;
 }
 
 export interface MeasurementValue {
@@ -23,9 +26,25 @@ export interface SensorData {
   measurements: MeasurementValue[];
 }
 
-export interface SwitchData {
+export interface SwitchBotData {
   mode: 'switch' | 'button';
   state: 'on' | 'off' | 'press';
+}
+
+export interface IRRemoteBot {
+  targetDeviceState: 'on' | 'off' | 'unknown';
+  targetDeviceMode?: string;
+  targetDeviceType: 'ac' | 'tv' | 'other';
+}
+
+export interface CurtainBot {
+  state: 'working' | 'stand_by';
+  curtainState: 'close' | 'open100' | 'open75' | 'open50' | 'open25';
+}
+
+export interface FishFeederBot {
+  state: 'working' | 'stand_by';
+  foodRemaining?: number;
 }
 
 const lightToText = [
