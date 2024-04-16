@@ -16,6 +16,7 @@ import { camelCase, mapKeys } from 'lodash';
 import {
   ArrowLeft,
   CalendarClock,
+  ChevronLeft,
   ChevronRight,
   Cpu,
   Info,
@@ -192,54 +193,71 @@ function DevicePage({ params }: { params: { id: string } }) {
         placement='bottom'
         open={drawer === 'advancedSetting'}
         onClose={closeDrawer}
-        height='94dvh'
-        title={
-          <div className='flex items-center justify-between h-10'>
-            <div className=''>Advanced settings</div>
-            <div className=''>
-              <Button type='primary' onClick={updateSwitchBot}>
+        height='96dvh'
+        styles={{
+          body: { padding: 0 },
+          header: {
+            display: 'none',
+          },
+          wrapper: {
+            borderRadius: '12px 12px 0 0',
+          },
+          content: {
+            borderRadius: '12px 12px 0 0',
+          },
+        }}
+      >
+        <div className='bg-gray-50 h-full'>
+          <div className='relative flex items-center justify-center w-full h-12 mb-4'>
+            <div className='font-semibold text-base'>Advanced settings</div>
+            <div className='absolute left-4'>
+              <Button
+                type='text'
+                onClick={closeDrawer}
+                style={{ color: 'rgb(59 130 246)' }}
+              >
+                Cancel
+              </Button>
+            </div>
+            <div className='absolute right-4'>
+              <Button
+                type='text'
+                onClick={updateSwitchBot}
+                style={{ color: 'rgb(59 130 246)' }}
+              >
                 Apply
               </Button>
             </div>
           </div>
-        }
-        styles={{
-          body: { padding: 0 },
-          header: {
-            padding: '0 0.75rem 0 0.75rem',
-          },
-        }}
-      >
-        <div className='px-3 pt-3 pb-8'>
-          <div className='mb-1 font-semibold'>Device name</div>
-          <Input
-            size='large'
-            allowClear
-            autoFocus
-            value={deviceName}
-            placeholder='Device name'
-            onChange={(e) => setDeviceName(e.target.value)}
-          />
+          <div className='p-4 mx-6 bg-white rounded-xl'>
+            <Input
+              size='large'
+              allowClear
+              autoFocus
+              value={deviceName}
+              placeholder='Device name'
+              onChange={(e) => setDeviceName(e.target.value)}
+            />
+          </div>
         </div>
       </Drawer>
       <main className='relative h-[100dvh]'>
-        <header className='absolute top-0 h-12 px-3 w-full bg-white'>
+        <header className='absolute top-0 h-12 px-2 w-full backdrop-blur-xl'>
           <div className='absolute top-1/2 -translate-y-1/2'>
-            <Button
+            <div
               onClick={() => router.back()}
-              className='-ml-0.5'
-              type='text'
-              shape='circle'
+              className='flex items-center text-blue-500'
             >
-              <ArrowLeft size={28} />
-            </Button>
+              <ChevronLeft size={30} strokeWidth={1.5} />
+              <div>Home</div>
+            </div>
           </div>
           <div className='flex items-center justify-center h-full'>
-            <h1 className='text-lg'>Bot Setting</h1>
+            <h1 className='text-base font-bold'>Bot Setting</h1>
           </div>
         </header>
-        <div className='pt-12'>
-          <div className='px-3 mt-3 bg-white'>
+        <div className='pt-12 px-6'>
+          <div className='px-4 mt-4 bg-white rounded-xl'>
             <div className='h-64 grid grid-rows-[1fr_auto]'>
               {device?.type === 'bot_switch' && (
                 <SwitchBotDetail
@@ -264,55 +282,53 @@ function DevicePage({ params }: { params: { id: string } }) {
               onClick={openAdvancedSetting}
             >
               <div className='flex items-center'>
-                <Settings className='text-gray-600' />
+                <Settings className='text-gray-400' />
                 <div className='ml-3'>Advanced Settings</div>
               </div>
               <Button className='-mr-0.5' type='text' shape='circle'>
-                <ChevronRight className='text-gray-600' />
+                <ChevronRight className='text-gray-400' strokeWidth={1.5} />
               </Button>
             </div>
           </div>
-          <div className='mt-3 bg-white'>
-            <div className='mx-3'>
-              <div className='h-14 flex justify-between items-center'>
-                <div className='flex items-center'>
-                  <CalendarClock className='text-gray-600' />
-                  <div className='ml-3'>Schedule</div>
-                </div>
-                <Button className='-mr-0.5' type='text' shape='circle'>
-                  <ChevronRight className='text-gray-600' />
-                </Button>
+          <div className='mt-8 bg-white rounded-xl px-4'>
+            <div className='h-14 flex justify-between items-center'>
+              <div className='flex items-center'>
+                <CalendarClock className='text-gray-400' />
+                <div className='ml-3'>Schedule</div>
               </div>
-              <Divider orientationMargin={0} className='!m-0' />
-              <div className='h-14 flex justify-between items-center'>
-                <div className='flex items-center'>
-                  <ReceiptText className='text-gray-600' />
-                  <div className='ml-3'>Log</div>
-                </div>
-                <Button className='-mr-0.5' type='text' shape='circle'>
-                  <ChevronRight className='text-gray-600' />
-                </Button>
+              <Button className='-mr-0.5' type='text' shape='circle'>
+                <ChevronRight className='text-gray-400' strokeWidth={1.5} />
+              </Button>
+            </div>
+            <Divider orientationMargin={0} className='!m-0' />
+            <div className='h-14 flex justify-between items-center'>
+              <div className='flex items-center'>
+                <ReceiptText className='text-gray-400' />
+                <div className='ml-3'>Log</div>
               </div>
-              <Divider orientationMargin={0} className='!m-0' />
-              <div className='h-14 flex justify-between items-center'>
-                <div className='flex items-center'>
-                  <Cpu className='text-gray-600' />
-                  <div className='ml-3'>Firmware</div>
-                </div>
-                <Button className='-mr-0.5' type='text' shape='circle'>
-                  <ChevronRight className='text-gray-600' />
-                </Button>
+              <Button className='-mr-0.5' type='text' shape='circle'>
+                <ChevronRight className='text-gray-400' strokeWidth={1.5} />
+              </Button>
+            </div>
+            <Divider orientationMargin={0} className='!m-0' />
+            <div className='h-14 flex justify-between items-center'>
+              <div className='flex items-center'>
+                <Cpu className='text-gray-400' />
+                <div className='ml-3'>Firmware</div>
               </div>
-              <Divider orientationMargin={0} className='!m-0' />
-              <div className='h-14 flex justify-between items-center'>
-                <div className='flex items-center'>
-                  <Info className='text-gray-600' />
-                  <div className='ml-3'>Device info</div>
-                </div>
-                <Button className='-mr-0.5' type='text' shape='circle'>
-                  <ChevronRight className='text-gray-600' />
-                </Button>
+              <Button className='-mr-0.5' type='text' shape='circle'>
+                <ChevronRight className='text-gray-400' strokeWidth={1.5} />
+              </Button>
+            </div>
+            <Divider orientationMargin={0} className='!m-0' />
+            <div className='h-14 flex justify-between items-center'>
+              <div className='flex items-center'>
+                <Info className='text-gray-400' />
+                <div className='ml-3'>Device info</div>
               </div>
+              <Button className='-mr-0.5' type='text' shape='circle'>
+                <ChevronRight className='text-gray-400' strokeWidth={1.5} />
+              </Button>
             </div>
           </div>
         </div>

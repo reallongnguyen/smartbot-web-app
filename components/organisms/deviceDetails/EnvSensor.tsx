@@ -27,7 +27,7 @@ const EnvSensorDetail = (props: EnvSensorDetailProps) => {
             />
           </div>
           <div className='flex items-center mt-2'>
-            <div className='mr-0.5'>{device.name || 'no name'}</div>
+            <div className='mr-0.5 text-lg'>{device.name || 'no name'}</div>
             <Button
               type='text'
               shape='circle'

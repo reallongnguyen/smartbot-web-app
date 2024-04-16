@@ -29,7 +29,7 @@ function SwitchCard(props: SwitchCardProps) {
       : device.switchBot?.state || 'off';
 
   return (
-    <Card className='h-28 relative' size='small'>
+    <div className='aspect-square relative bg-white p-4 rounded-3xl ring-1 ring-gray-100 overflow-hidden'>
       <div
         className='absolute left-0 top-0 w-full h-full'
         onClick={() => router.push(`/devices/${device.id}`)}
@@ -53,13 +53,13 @@ function SwitchCard(props: SwitchCardProps) {
           onClick={action}
         />
       </div>
-      <div className='absolute left-0 bottom-0 w-full h-1/2 pt-1 px-3 pointer-events-none'>
-        <div className='font-semibold truncate text-ellipsis'>
+      <div className='absolute left-0 bottom-4 w-full pt-1 px-4 pointer-events-none'>
+        <div className='text-lg font-semibold truncate text-ellipsis'>
           {device.name || 'no name'}
         </div>
-        <p className='text-xs'>{state.toUpperCase()}</p>
+        <p className='text-sm mt-0.5'>{state.toUpperCase()}</p>
       </div>
-    </Card>
+    </div>
   );
 }
 

@@ -196,12 +196,13 @@ export default function Home() {
 
   return (
     <>
-      <main className='relative grid grid-rows-[auto_1fr_auto] h-[100dvh]'>
-        <header className='h-12 flex items-center px-3'>
-          <h1 className='text-lg font-semibold'>Home</h1>
+      <main className='relative h-[100dvh]'>
+        <div className='h-8'></div>
+        <header className='h-12 flex items-center px-6 sticky top-0 z-50 backdrop-blur-xl'>
+          <h1 className='text-2xl font-semibold'>Home</h1>
         </header>
-        <div className='px-3'>
-          <div className='grid grid-cols-2 gap-2'>
+        <div className='px-6 pt-4 pb-24'>
+          <div className='grid grid-cols-2 gap-5'>
             {Object.values(devices).map((device) => (
               <IoTDeviceCard
                 device={device}
@@ -211,7 +212,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-        <div className='absolute bottom-0 h-16 w-full bg-white'></div>
+        <div className='fixed bottom-0 h-16 w-full backdrop-blur-xl'></div>
       </main>
     </>
   );
