@@ -43,24 +43,16 @@ const SwitchBotDetail = (props: SwitchBotDetailProps) => {
       <div className='py-1 flex space-x-2'>
         {device.switchBot?.mode === 'switch' && (
           <>
-            <Button
-              type={device.switchBot?.state === 'off' ? 'primary' : 'text'}
-              className='w-full'
-              onClick={turnOn}
-            >
+            <Button type='text' className='w-full' onClick={turnOn}>
               Switch On
             </Button>
-            <Button
-              type={device.switchBot?.state === 'on' ? 'primary' : 'text'}
-              className='w-full'
-              onClick={turnOff}
-            >
+            <Button type='text' className='w-full' onClick={turnOff}>
               Switch Off
             </Button>
           </>
         )}
         {device.switchBot?.mode === 'button' && (
-          <Button type='primary' className='w-full' onClick={turnOn}>
+          <Button type='text' className='w-full' onClick={turnOn}>
             Press
           </Button>
         )}

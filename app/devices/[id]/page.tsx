@@ -6,15 +6,16 @@ import {
   SwitchBotData,
 } from '@/components/molecules/deviceCards/models';
 import EnvSensorDetail from '@/components/organisms/deviceDetails/EnvSensor';
+import SwitchBotAdvanceSetting from '@/components/organisms/deviceDetails/SwitchBotAdvancedSetting';
 import SwitchBotDetail from '@/components/organisms/deviceDetails/SwitchBotDetail';
+import FullScreenDrawer from '@/components/templates/FullScreenDrawer';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
 import useCommand from '@/usecases/command/useCommand';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
 import { useSupabase } from '@/usecases/supabase/SupabaseContex';
-import { Button, Divider, Drawer, Input, message } from 'antd';
-import { camelCase, mapKeys } from 'lodash';
+import { Button, Divider, message } from 'antd';
+import { camelCase, mapKeys, merge } from 'lodash';
 import {
-  ArrowLeft,
   CalendarClock,
   ChevronLeft,
   ChevronRight,
@@ -31,7 +32,6 @@ function DevicePage({ params }: { params: { id: string } }) {
   const authSession = useAuthSession();
 
   const [device, setDevice] = useState<IoTDevice | null>(null);
-  const [deviceName, setDeviceName] = useState('');
   const [drawer, setDrawer] = useState('');
 
   const router = useRouter();
@@ -69,29 +69,43 @@ function DevicePage({ params }: { params: { id: string } }) {
     setDrawer('');
   };
 
-  const updateSwitchBot = useCallback(async () => {
-    if (!supabase || !device) {
-      return;
-    }
+  const updateSwitchBot = useCallback(
+    async (updateData: Partial<IoTDevice<SwitchBotData>>) => {
+      if (!supabase) {
+        return;
+      }
 
-    const { error } = await supabase
-      .from('iot_devices')
-      .update({ name: deviceName })
-      .eq('id', device.id);
+      const { error } = await supabase
+        .from('iot_devices')
+        .update({ name: updateData.name })
+        .eq('id', updateData.id);
 
-    if (error) {
-      message.error({ content: error.message });
-      return;
-    }
+      if (error) {
+        message.error({ content: error.message });
+        return;
+      }
 
-    message.success({ content: 'saved' });
-    setDevice((d) => (d ? { ...d, name: deviceName } : d));
-    closeDrawer();
-  }, [device, deviceName, supabase]);
+      setDevice((d) => merge(d, updateData));
 
-  useEffect(() => {
-    setDeviceName(device?.name || '');
-  }, [device?.name]);
+      if (updateData.type === 'bot_switch') {
+        const { error: err } = await supabase
+          .from('switch_bots')
+          .update({ mode: updateData.switchBot?.mode })
+          .eq('id', updateData.id);
+
+        if (err) {
+          message.error({ content: err.message });
+          return;
+        }
+
+        setDevice((d) => merge(d, updateData));
+      }
+
+      message.success({ content: 'saved' });
+      closeDrawer();
+    },
+    [supabase]
+  );
 
   useEffect(() => {
     if (!supabase) {
@@ -189,60 +203,20 @@ function DevicePage({ params }: { params: { id: string } }) {
 
   return (
     <>
-      <Drawer
-        placement='bottom'
+      <FullScreenDrawer
         open={drawer === 'advancedSetting'}
         onClose={closeDrawer}
-        height='96dvh'
-        styles={{
-          body: { padding: 0 },
-          header: {
-            display: 'none',
-          },
-          wrapper: {
-            borderRadius: '12px 12px 0 0',
-          },
-          content: {
-            borderRadius: '12px 12px 0 0',
-          },
-        }}
       >
-        <div className='bg-gray-50 h-full'>
-          <div className='relative flex items-center justify-center w-full h-12 mb-4'>
-            <div className='font-semibold text-base'>Advanced settings</div>
-            <div className='absolute left-4'>
-              <Button
-                type='text'
-                onClick={closeDrawer}
-                style={{ color: 'rgb(59 130 246)' }}
-              >
-                Cancel
-              </Button>
-            </div>
-            <div className='absolute right-4'>
-              <Button
-                type='text'
-                onClick={updateSwitchBot}
-                style={{ color: 'rgb(59 130 246)' }}
-              >
-                Apply
-              </Button>
-            </div>
-          </div>
-          <div className='p-4 mx-6 bg-white rounded-xl'>
-            <Input
-              size='large'
-              allowClear
-              autoFocus
-              value={deviceName}
-              placeholder='Device name'
-              onChange={(e) => setDeviceName(e.target.value)}
-            />
-          </div>
-        </div>
-      </Drawer>
+        {device?.type === 'bot_switch' && (
+          <SwitchBotAdvanceSetting
+            device={device as IoTDevice<SwitchBotData>}
+            updateSwitchBot={updateSwitchBot}
+            cancel={closeDrawer}
+          />
+        )}
+      </FullScreenDrawer>
       <main className='relative h-[100dvh]'>
-        <header className='absolute top-0 h-12 px-2 w-full backdrop-blur-xl'>
+        <header className='h-12 px-2 w-full backdrop-blur-xl sticky top-0 z-50'>
           <div className='absolute top-1/2 -translate-y-1/2'>
             <div
               onClick={() => router.back()}
@@ -256,8 +230,8 @@ function DevicePage({ params }: { params: { id: string } }) {
             <h1 className='text-base font-bold'>Bot Setting</h1>
           </div>
         </header>
-        <div className='pt-12 px-6'>
-          <div className='px-4 mt-4 bg-white rounded-xl'>
+        <div className='pt-4 px-6 space-y-8'>
+          <div className='px-4 bg-white rounded-xl'>
             <div className='h-64 grid grid-rows-[1fr_auto]'>
               {device?.type === 'bot_switch' && (
                 <SwitchBotDetail
@@ -290,7 +264,7 @@ function DevicePage({ params }: { params: { id: string } }) {
               </Button>
             </div>
           </div>
-          <div className='mt-8 bg-white rounded-xl px-4'>
+          <div className='bg-white rounded-xl px-4'>
             <div className='h-14 flex justify-between items-center'>
               <div className='flex items-center'>
                 <CalendarClock className='text-gray-400' />

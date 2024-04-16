@@ -26,9 +26,12 @@ export interface SensorData {
   measurements: MeasurementValue[];
 }
 
+export type SwitchMode = 'switch' | 'button';
+export type SwitchState = 'on' | 'off' | 'press';
+
 export interface SwitchBotData {
-  mode: 'switch' | 'button';
-  state: 'on' | 'off' | 'press';
+  mode: SwitchMode;
+  state: SwitchState;
 }
 
 export interface IRRemoteBot {

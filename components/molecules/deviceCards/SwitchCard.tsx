@@ -3,7 +3,7 @@ import { Power } from 'lucide-react';
 import SwitchIcon from '../../atoms/SwitchIcon';
 import { memo } from 'react';
 import ButtonIcon from '../../atoms/ButtonIcon';
-import { IoTDevice, SwitchBotData } from './models';
+import { IoTDevice, SwitchBotData, SwitchState } from './models';
 import { useRouter } from 'next/navigation';
 
 export interface SwitchCardProps {
@@ -18,7 +18,7 @@ function SwitchCard(props: SwitchCardProps) {
 
   const DeviceIcon =
     device.switchBot?.mode === 'switch' ? (
-      <SwitchIcon state={(device.switchBot?.state || 'off') as 'on' | 'off'} />
+      <SwitchIcon state={(device.switchBot?.state || 'off') as SwitchState} />
     ) : (
       <ButtonIcon state={device.switchBot?.state || 'off'} />
     );
