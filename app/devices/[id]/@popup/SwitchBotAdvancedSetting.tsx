@@ -3,6 +3,7 @@ import {
   SwitchBotData,
   SwitchMode,
 } from '@/components/molecules/deviceCards/models';
+import FullScreenDrawerContent from '@/components/templates/FullScreenDrawerContent';
 import { Button, Input } from 'antd';
 import { ChangeEvent, useState } from 'react';
 
@@ -41,28 +42,11 @@ const SwitchBotAdvanceSetting = (props: SwitchBotAdvanceSettingProps) => {
   };
 
   return (
-    <div className='bg-gray-50 h-full'>
-      <div className='relative flex items-center justify-center w-full h-12 mb-4'>
-        <div className='font-semibold text-base'>Advanced settings</div>
-        <div className='absolute left-2'>
-          <Button
-            type='text'
-            onClick={cancel}
-            style={{ color: 'rgb(59 130 246)' }}
-          >
-            Cancel
-          </Button>
-        </div>
-        <div className='absolute right-2'>
-          <Button
-            type='text'
-            onClick={save}
-            style={{ color: 'rgb(59 130 246)' }}
-          >
-            Apply
-          </Button>
-        </div>
-      </div>
+    <FullScreenDrawerContent
+      ok={save}
+      cancel={cancel}
+      title='Advanced Settings'
+    >
       <div className='space-y-8'>
         <div className='mx-6 p-4 bg-white rounded-xl space-y-2'>
           <div>
@@ -99,7 +83,7 @@ const SwitchBotAdvanceSetting = (props: SwitchBotAdvanceSettingProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </FullScreenDrawerContent>
   );
 };
 

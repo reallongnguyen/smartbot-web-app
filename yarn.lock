@@ -1002,6 +1002,11 @@ copy-to-clipboard@^3.3.3:
   dependencies:
     toggle-selection "^1.0.6"
 
+cronstrue@^2.49.0:
+  version "2.49.0"
+  resolved "https://registry.yarnpkg.com/cronstrue/-/cronstrue-2.49.0.tgz#d59f6d19e33030d45d9ecd3b845d4ccd79c6bfbd"
+  integrity sha512-FWZBqdStQaPR8ZTBQGALh1EK9Hl1HcG70dyGvD1rKLPafFO3H73o38dz/e8YkIlbLn3JxmBI/f6Doe3Nh+DcEQ==
+
 cross-spawn@^7.0.0, cross-spawn@^7.0.2:
   version "7.0.3"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.3.tgz#f73a85b9d5d41d045551c177e2882d4ac85728a6"

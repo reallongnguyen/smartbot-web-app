@@ -6,11 +6,11 @@ import {
   SwitchBotData,
 } from '@/components/molecules/deviceCards/models';
 import EnvSensorDetail from '@/components/organisms/deviceDetails/EnvSensor';
-import SwitchBotAdvanceSetting from '@/components/organisms/deviceDetails/SwitchBotAdvancedSetting';
+import SwitchBotAdvanceSetting from '@/app/devices/[id]/@popup/SwitchBotAdvancedSetting';
 import SwitchBotDetail from '@/components/organisms/deviceDetails/SwitchBotDetail';
 import FullScreenDrawer from '@/components/templates/FullScreenDrawer';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
-import useCommand from '@/usecases/command/useCommand';
+import useCommandRepo from '@/usecases/iotDevice/useCommandRepo';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
 import { useSupabase } from '@/usecases/supabase/SupabaseContex';
 import { Button, Divider, message } from 'antd';
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import ListSchedulePopup from './@popup/ListSchedulePopup';
 
 function DevicePage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -37,7 +38,7 @@ function DevicePage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const pubsub = usePubSub();
   const supabase = useSupabase();
-  const command = useCommand();
+  const command = useCommandRepo();
 
   const changeDevice = (id: string, data: Record<string, any>) => {
     setDevice((d) => {
@@ -215,6 +216,13 @@ function DevicePage({ params }: { params: { id: string } }) {
           />
         )}
       </FullScreenDrawer>
+      {device && (
+        <ListSchedulePopup
+          open={drawer === 'listSchedule'}
+          close={closeDrawer}
+          device={device}
+        />
+      )}
       <main className='relative h-[100dvh]'>
         <header className='h-12 px-2 w-full backdrop-blur-xl sticky top-0 z-50'>
           <div className='absolute top-1/2 -translate-y-1/2'>
@@ -265,7 +273,10 @@ function DevicePage({ params }: { params: { id: string } }) {
             </div>
           </div>
           <div className='bg-white rounded-xl px-4'>
-            <div className='h-14 flex justify-between items-center'>
+            <div
+              className='h-14 flex justify-between items-center'
+              onClick={() => setDrawer('listSchedule')}
+            >
               <div className='flex items-center'>
                 <CalendarClock className='text-gray-400' />
                 <div className='ml-3'>Schedule</div>

@@ -3,7 +3,7 @@ import { useAuthSession } from '../auth/AuthContext';
 import usePubSub from '../pubsub/PubSubContext';
 import { ulid } from 'ulid';
 
-const useCommand = () => {
+const useCommandRepo = () => {
   const authSession = useAuthSession();
   const spaceId = authSession?.spaceId!;
   const userId = authSession?.userId!;
@@ -40,4 +40,4 @@ const useCommand = () => {
   };
 };
 
-export default useCommand;
+export default useCommandRepo;

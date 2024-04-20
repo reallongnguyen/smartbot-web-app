@@ -8,11 +8,11 @@ import { useSupabase } from '@/usecases/supabase/SupabaseContex';
 import { useEffect, useState } from 'react';
 import { camelCase, mapKeys } from 'lodash';
 import { message } from 'antd';
-import useCommand from '@/usecases/command/useCommand';
+import useCommandRepo from '@/usecases/iotDevice/useCommandRepo';
 
 export default function Home() {
   const authSession = useAuthSession();
-  const command = useCommand();
+  const command = useCommandRepo();
 
   const pubsub = usePubSub();
   const supabase = useSupabase();
