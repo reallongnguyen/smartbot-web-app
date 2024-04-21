@@ -1,10 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Schedule } from './model';
 import { useAuthSession } from '../auth/AuthContext';
 import { useSupabase } from '../supabase/SupabaseContex';
 import { toCamelCaseArr } from '../common/utils';
-import { APIError, APIResult, FailResult } from '../common/resultModel';
-import { message } from 'antd';
+import { APIResult } from '../common/resultModel';
 
 export type CreateScheduleDTO = Pick<
   Schedule,
@@ -19,7 +18,7 @@ const useScheduleRepo = () => {
     async (deviceId: string) => {
       if (!authSession || !spb) {
         return {
-          error: { message: 'not auth' },
+          data: [],
         } as APIResult<Schedule[]>;
       }
 
@@ -42,7 +41,7 @@ const useScheduleRepo = () => {
     async (data: CreateScheduleDTO) => {
       if (!authSession || !spb) {
         return {
-          error: { message: 'not auth' },
+          data: {},
         } as APIResult<Schedule>;
       }
 
@@ -71,7 +70,7 @@ const useScheduleRepo = () => {
     async (ids: string[]) => {
       if (!authSession || !spb) {
         return {
-          error: { message: 'not auth' },
+          data: {},
         } as APIResult<{}>;
       }
 
@@ -82,11 +81,16 @@ const useScheduleRepo = () => {
     [authSession, spb]
   );
 
-  return {
-    getSchedulesByDeviceId,
-    addOneSchedule,
-    deleteSchedules,
-  };
+  const repo = useMemo(
+    () => ({
+      getSchedulesByDeviceId,
+      addOneSchedule,
+      deleteSchedules,
+    }),
+    [addOneSchedule, deleteSchedules, getSchedulesByDeviceId]
+  );
+
+  return repo;
 };
 
 export default useScheduleRepo;

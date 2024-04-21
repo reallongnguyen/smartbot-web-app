@@ -32,9 +32,9 @@ const ListSchedulePopup = (
 
   const scheduleRepo = useScheduleRepo();
 
-  const mapActionName: Record<string, string> = mapDeviceTypeActionOptions[
-    device?.type || ''
-  ].reduce((p, c) => ({ ...p, [c.action]: c.name }), {});
+  const mapActionName: Record<string, string> = (
+    mapDeviceTypeActionOptions[device.type] || []
+  ).reduce((p, c) => ({ ...p, [c.action]: c.name }), {});
 
   const humanSchedules = useMemo(() => {
     const mapScheduleHumanText: Record<string, string> = {};
@@ -84,7 +84,7 @@ const ListSchedulePopup = (
     message.success({ content: 'deleted' });
 
     const newSchedules = { ...schedules };
-    delete newSchedules.id;
+    delete newSchedules[id];
     setSchedules(newSchedules);
   };
 
@@ -112,6 +112,14 @@ const ListSchedulePopup = (
 
     findSchedules();
   }, [device.id, scheduleRepo, setSchedules]);
+
+  useEffect(() => {
+    console.log('device.id changed', device.id);
+  }, [device.id]);
+
+  useEffect(() => {
+    console.log('schedule repo changed');
+  }, [scheduleRepo]);
 
   return (
     <>

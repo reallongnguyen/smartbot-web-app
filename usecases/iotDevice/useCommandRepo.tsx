@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAuthSession } from '../auth/AuthContext';
 import usePubSub from '../pubsub/PubSubContext';
 import { ulid } from 'ulid';
@@ -34,10 +34,15 @@ const useCommandRepo = () => {
     [pubsub, spaceId, userId]
   );
 
-  return {
-    turnOnSwitchBot,
-    turnOffSwitchBot,
-  };
+  const repo = useMemo(
+    () => ({
+      turnOnSwitchBot,
+      turnOffSwitchBot,
+    }),
+    [turnOffSwitchBot, turnOnSwitchBot]
+  );
+
+  return repo;
 };
 
 export default useCommandRepo;
