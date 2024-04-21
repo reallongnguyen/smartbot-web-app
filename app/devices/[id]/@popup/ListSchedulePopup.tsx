@@ -1,6 +1,6 @@
 import FullScreenDrawer from '@/components/templates/FullScreenDrawer';
 import FullScreenDrawerContent from '@/components/templates/FullScreenDrawerContent';
-import { Button, Divider, Tag, message } from 'antd';
+import { Button, Divider, Empty, Tag, message } from 'antd';
 import {
   PropsWithChildren,
   useCallback,
@@ -113,14 +113,6 @@ const ListSchedulePopup = (
     findSchedules();
   }, [device.id, scheduleRepo, setSchedules]);
 
-  useEffect(() => {
-    console.log('device.id changed', device.id);
-  }, [device.id]);
-
-  useEffect(() => {
-    console.log('schedule repo changed');
-  }, [scheduleRepo]);
-
   return (
     <>
       <AddSchedulePopup
@@ -162,6 +154,21 @@ const ListSchedulePopup = (
                 </div>
               ))}
             </div>
+            {Object.keys(schedules).length === 0 && (
+              <div>
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description='No schedule'
+                >
+                  <Button
+                    type='primary'
+                    onClick={() => setOpenAddSchedule(true)}
+                  >
+                    Add now
+                  </Button>
+                </Empty>
+              </div>
+            )}
           </div>
           <div className='fixed bottom-0 backdrop-2xl h-16 w-full flex items-center px-6'>
             <Button

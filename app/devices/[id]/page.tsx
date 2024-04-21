@@ -6,9 +6,8 @@ import {
   SwitchBotData,
 } from '@/components/molecules/deviceCards/models';
 import EnvSensorDetail from '@/components/organisms/deviceDetails/EnvSensor';
-import SwitchBotAdvanceSetting from '@/app/devices/[id]/@popup/SwitchBotAdvancedSetting';
+import SwitchBotAdvanceSettingPopup from '@/app/devices/[id]/@popup/SwitchBotAdvancedSettingPopup';
 import SwitchBotDetail from '@/components/organisms/deviceDetails/SwitchBotDetail';
-import FullScreenDrawer from '@/components/templates/FullScreenDrawer';
 import { useAuthSession } from '@/usecases/auth/AuthContext';
 import useCommandRepo from '@/usecases/iotDevice/useCommandRepo';
 import usePubSub from '@/usecases/pubsub/PubSubContext';
@@ -27,6 +26,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import ListSchedulePopup from './@popup/ListSchedulePopup';
+import GeneralAdvanceSettingPopup from './@popup/GeneralAdvancedSettingPopup';
 
 function DevicePage({ params }: { params: { id: string } }) {
   const { id } = params;
@@ -70,8 +70,8 @@ function DevicePage({ params }: { params: { id: string } }) {
     setDrawer('');
   };
 
-  const updateSwitchBot = useCallback(
-    async (updateData: Partial<IoTDevice<SwitchBotData>>) => {
+  const updateDevice = useCallback(
+    async <T,>(updateData: Partial<IoTDevice<T>>) => {
       if (!supabase) {
         return;
       }
@@ -89,9 +89,11 @@ function DevicePage({ params }: { params: { id: string } }) {
       setDevice((d) => merge(d, updateData));
 
       if (updateData.type === 'bot_switch') {
+        const mode = (updateData as Partial<IoTDevice<SwitchBotData>>).switchBot
+          ?.mode;
         const { error: err } = await supabase
           .from('switch_bots')
-          .update({ mode: updateData.switchBot?.mode })
+          .update({ mode })
           .eq('id', updateData.id);
 
         if (err) {
@@ -204,24 +206,30 @@ function DevicePage({ params }: { params: { id: string } }) {
 
   return (
     <>
-      <FullScreenDrawer
-        open={drawer === 'advancedSetting'}
-        onClose={closeDrawer}
-      >
-        {device?.type === 'bot_switch' && (
-          <SwitchBotAdvanceSetting
-            device={device as IoTDevice<SwitchBotData>}
-            updateSwitchBot={updateSwitchBot}
-            cancel={closeDrawer}
-          />
-        )}
-      </FullScreenDrawer>
       {device && (
-        <ListSchedulePopup
-          open={drawer === 'listSchedule'}
-          close={closeDrawer}
-          device={device}
-        />
+        <>
+          {device.type === 'bot_switch' && (
+            <SwitchBotAdvanceSettingPopup
+              open={drawer === 'advancedSetting'}
+              device={device as IoTDevice<SwitchBotData>}
+              updateSwitchBot={updateDevice}
+              cancel={closeDrawer}
+            />
+          )}
+          {device.type === 'sensor_env' && (
+            <GeneralAdvanceSettingPopup
+              open={drawer === 'advancedSetting'}
+              device={device as IoTDevice<SwitchBotData>}
+              update={updateDevice}
+              cancel={closeDrawer}
+            />
+          )}
+          <ListSchedulePopup
+            open={drawer === 'listSchedule'}
+            close={closeDrawer}
+            device={device}
+          />
+        </>
       )}
       <main className='relative h-[100dvh]'>
         <header className='h-12 px-2 w-full backdrop-blur-xl sticky top-0 z-50'>

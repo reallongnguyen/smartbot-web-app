@@ -1,4 +1,4 @@
-import { Button, Card } from 'antd';
+import { Button } from 'antd';
 import { Power } from 'lucide-react';
 import SwitchIcon from '../../atoms/SwitchIcon';
 import { memo } from 'react';
@@ -54,7 +54,7 @@ function SwitchCard(props: SwitchCardProps) {
         />
       </div>
       <div className='absolute left-0 bottom-4 w-full pt-1 px-4 pointer-events-none'>
-        <div className='text-lg font-semibold truncate text-ellipsis'>
+        <div className='text-base font-semibold truncate text-ellipsis'>
           {device.name || 'no name'}
         </div>
         <p className='text-sm mt-0.5'>{state.toUpperCase()}</p>

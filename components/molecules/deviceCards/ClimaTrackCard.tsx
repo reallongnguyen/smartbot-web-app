@@ -1,4 +1,4 @@
-import { Card, Divider } from 'antd';
+import { Divider } from 'antd';
 import { ThermometerSunIcon } from 'lucide-react';
 import { IoTDevice, SensorData, mapMeasurementValue } from './models';
 import GeneralDeviceIcon from '@/components/atoms/GeneralDeviceIcon';
@@ -87,7 +87,7 @@ function ClimaTrackCard(props: ClimaTrackCardProps) {
         </div>
       </div>
       <div className='absolute left-0 bottom-4 w-full pt-1 px-4 pointer-events-none'>
-        <div className='text-lg font-semibold truncate text-ellipsis'>
+        <div className='text-base font-semibold truncate text-ellipsis'>
           {device.name || 'no name'}
         </div>
         <div className='flex space-x-1 items-center'>
