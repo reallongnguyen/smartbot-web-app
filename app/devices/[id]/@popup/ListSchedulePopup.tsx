@@ -135,7 +135,7 @@ const ListSchedulePopup = (
           cancel={close}
           cancelTitle='Close'
         >
-          <div className='mt-8'>
+          <div>
             <div className='mx-6 mb-1 text-gray-400 text-base'>Schedule(s)</div>
             <div className='relative mx-6 px-4 bg-white rounded-xl'>
               {Object.values(schedules).map((s, idx) => (

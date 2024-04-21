@@ -112,7 +112,7 @@ const AddSchedulePopup = (props: PropsWithChildren<AddSchedulePopupProps>) => {
         cancel={close}
         ok={createSchedule}
       >
-        <div className='mt-8'>
+        <div>
           <div className='mx-6 mb-1 text-gray-400 text-base'>Schedule</div>
           <div className='relative mx-6 p-4 bg-white rounded-xl space-y-2'>
             <div className='text-center text-base'>{human}</div>

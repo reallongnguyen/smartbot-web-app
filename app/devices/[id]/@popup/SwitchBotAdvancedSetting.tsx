@@ -48,11 +48,12 @@ const SwitchBotAdvanceSetting = (props: SwitchBotAdvanceSettingProps) => {
       title='Advanced Settings'
     >
       <div className='space-y-8'>
-        <div className='mx-6 p-4 bg-white rounded-xl space-y-2'>
-          <div>
-            <div className='mb-1'>Device name</div>
+        <div>
+          <div className='mx-6 mb-1 text-gray-400 text-base'>Device name</div>
+          <div className='mx-6 p-4 bg-white rounded-xl space-y-2'>
             <Input
               size='large'
+              variant='filled'
               allowClear
               autoFocus
               value={updateData.name}
