@@ -61,16 +61,15 @@ function AddDevice() {
         setIsProcessing(true);
         await axios.get('http://192.168.4.1/ping', { timeout: 32000 });
         setIsProcessing(false);
-
-        clearInterval(id);
-      } catch (err) {}
+      } catch (err) {
+        id = setTimeout(checkConnectDevice, 2000);
+      }
     };
 
     checkConnectDevice();
-    id = setInterval(checkConnectDevice, 32000);
 
     return () => {
-      clearInterval(id);
+      clearTimeout(id);
     };
   }, []);
 
